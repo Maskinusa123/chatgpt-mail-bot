@@ -2,14 +2,15 @@ name: ChatGPT Scheduler and Email
 
 on:
   schedule:
-    - cron: '0 8 * * *'  # 每天 UTC 时间 8:00 执行（北京时间 16:00）。修改 cron 语法以调整定时，例如 '0 0 * * 1' 为每周一凌晨。
+    - cron: '0 8 * * *' # 每天 UTC 8:00 (PDT 1:00 AM)
+  workflow_dispatch: # 允许手动触发
 
 jobs:
   chatgpt-task:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4  # 如果需要访问仓库文件，可选。
+        uses: actions/checkout@v4
 
       - name: Call OpenAI API
         id: openai
@@ -18,23 +19,23 @@ jobs:
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer ${{ secrets.OPENAI_API_KEY }}" \
             -d '{
-              "model": "gpt-4o-mini",  # 使用 gpt-4o-mini（廉价）或 gpt-4o，根据需求换。
-              "messages": [{"role": "user", "content": "你的特定指令在这里，例如：生成今日科技新闻摘要。"}],  # 修改 content 为你的指令。
+              "model": "gpt-4o-mini",
+              "messages": [{"role": "user", "content": "Generate a daily tech news summary in Chinese."}],
               "temperature": 0.7
             }')
-          # 提取回复内容（假设成功）
           REPLY=$(echo "$RESPONSE" | jq -r '.choices[0].message.content' || echo "Error: $RESPONSE")
-          echo "reply=$REPLY" >> $GITHUB_OUTPUT  # 保存回复到输出变量
+          echo "reply=$REPLY" >> $GITHUB_OUTPUT
 
       - name: Send Email with Response
-        uses: dawidd6/action-send-mail@v3  # 一个可靠的 SMTP 邮件 Action。
+        if: always() # 确保即使 API 失败也发送邮件
+        uses: dawidd6/action-send-mail@v3
         with:
-          server_address: smtp-mail.outlook.com  # Outlook SMTP 服务器。
-          server_port: 587  # Outlook 使用 587 端口 (STARTTLS)。
-          secure: false  # 对于 STARTTLS，使用 false；如果用 465 SSL，则 true。
+          server_address: smtp-mail.outlook.com
+          server_port: 587
+          secure: false
           username: ${{ secrets.EMAIL_USER }}
           password: ${{ secrets.EMAIL_PASS }}
-          subject: "ChatGPT 回复: 你的指令标题"  # 自定义主题。
+          subject: "ChatGPT Daily Tech News Summary"
           to: ${{ secrets.EMAIL_TO }}
           from: ${{ secrets.EMAIL_USER }}
-          body: "ChatGPT 回复：\n\n${{ steps.openai.outputs.reply }}"  # 将 API 回复放入邮件正文。
+          body: "ChatGPT Reply:\n\n${{ steps.openai.outputs.reply }}"
