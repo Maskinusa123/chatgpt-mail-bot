@@ -1,30 +1,30 @@
-name: Send Daily News
+name: Daily ChatGPT News Email
 
 on:
   schedule:
-    # 每天早上8点北京时间（UTC0 = 8小时差）
-    - cron: '0 0 * * *'
-  workflow_dispatch: # 可手动触发
+    - cron: "0 0 * * *"   # UTC 0点，对应北京时间早上8点
+  workflow_dispatch:      # 手动触发调试
 
 jobs:
   send_news:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: "3.10"
+
       - name: Install dependencies
-        run: pip install requests
+        run: pip install openai smtplib
+
       - name: Run bot.py
         env:
           EMAIL_ADDRESS: ${{ secrets.EMAIL_ADDRESS }}
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
           TO_EMAIL: ${{ secrets.TO_EMAIL }}
-          NEWS_API_KEY: ${{ secrets.NEWS_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: python bot.py
 
-          to: ${{ secrets.EMAIL_TO }}
-          from: ${{ secrets.EMAIL_USER }}
-          body: "ChatGPT Reply:\n\n${{ steps.openai.outputs.reply }}"
