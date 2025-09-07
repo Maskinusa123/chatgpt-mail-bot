@@ -2,7 +2,7 @@ name: Daily ChatGPT News Email
 
 on:
   schedule:
-    - cron: "0 0 * * *"   # UTC 0点，对应北京时间早上8点
+    - cron: "0 0 * * *"   # UTC 0点 -> 北京时间早上8点
   workflow_dispatch:      # 手动触发调试
 
 jobs:
@@ -18,7 +18,7 @@ jobs:
           python-version: "3.10"
 
       - name: Install dependencies
-        run: pip install openai smtplib
+        run: pip install openai
 
       - name: Run bot.py
         env:
@@ -27,4 +27,3 @@ jobs:
           TO_EMAIL: ${{ secrets.TO_EMAIL }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: python bot.py
-
